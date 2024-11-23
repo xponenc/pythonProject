@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from models import Product, Customer, Order
 
 
@@ -33,6 +35,7 @@ def test_shop():
 
     print("Общее количество заказов", Order.total_orders())
     print("Общая стоимость заказов", Order.total_orders_cost())
+    print(datetime.now())
 
 
 if __name__ == "__main__":
