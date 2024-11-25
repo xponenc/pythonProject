@@ -30,28 +30,6 @@ class Product:
         return self.__price < other.__price
 
 
-class Customer:
-    """Модель Покупателя"""
-
-    def __init__(self, name: str):
-        self.__name = name
-        self.__orders = list()
-
-    def __str__(self):
-        return f"Покупатель {self.__name}"
-
-    def __repr__(self):
-        return f"Customer(name={self.__name}"
-
-    def add_order(self, order):
-        if order not in self.__orders:
-            self.__orders.append(order)
-
-    def order_history(self):
-        history = "\n".join(str(order) for order in self.__orders)
-        print(f"История заказов:\n{history}\n")
-
-
 class Order:
     """Класс Order"""
     __total_orders = 0
