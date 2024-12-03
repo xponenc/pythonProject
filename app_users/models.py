@@ -2,14 +2,17 @@ from pprint import pprint
 
 from passlib.hash import sha256_crypt
 
+from app_users.exceptions import UserAlreadyExistsError, UserNotFoundError
+
 
 class User:
     """Модель Пользователь"""
     users = dict()
 
-    def __init__(self, username, email, password):
+    def __init__(self, username, email, password, age=None):
         self.__username = username
         self.__email = email
+        self.__age = age
         self.__password = self.hash_password(password)
         User.users[self.__username] = self
 
@@ -50,15 +53,6 @@ class Customer(User):
         details["address"] = self.__address
         return details
 
-    #
-    # def add_order(self, order):
-    #     if order not in self.__orders:
-    #         self.__orders.append(order)
-    #
-    # def order_history(self):
-    #     history = "\n".join(str(order) for order in self.__orders)
-    #     print(f"История заказов:\n{history}\n")
-
 
 class Admin(User):
     """Модель Администратор"""
@@ -96,9 +90,10 @@ class AuthenticationService:
     def register(cls, user_class, username, email, password, *args):
         if username in User.users:
             print(f"Имя пользователя {username} уже занято.")
-            return True
-        user_class(username, email, password, *args)
+            return False
+        user = user_class(username, email, password, *args)
         print(f"Пользователь {username} успешно зарегистрирован.")
+        return user
 
     def login(self, username, password):
         checked_user = User.users.get(username)
@@ -125,28 +120,34 @@ class AuthenticationService:
         return self.__logged_users
 
 
+class UserManager:
+    def __init__(self):
+        self.users = {}
+
+    def add_user(self, user: User):
+        if user.username in self.users:
+            raise UserAlreadyExistsError(f"Пользователь '{user.username}' уже существует")
+        self.users[user.username] = user
+        print(f"Пользователь '{user.username}' успешно добавлен")
+
+    def remove_user(self, username: str):
+        if username not in self.users:
+            raise UserNotFoundError(f"Пользователь '{username}' не найден.")
+        del self.users[username]
+        print(f"Пользователь '{username}' успешно удален")
+
+    def find_user(self, username: str) -> User:
+        if username not in self.users:
+            raise UserNotFoundError(f"Пользователь '{username}' не найден.")
+        return self.users[username]
+
+
 if __name__ == "__main__":
     auth_service = AuthenticationService()
 
-    print("\n", 5 * "*", "Регистрация")
     auth_service.register(Customer, "test2", "john@example.com", "password2", "City Street 1")
-    auth_service.register(Customer, "test2", "john@example.com", "password2", "City Street 1")
-    auth_service.register(Customer, "test3", "john@example.com", "password3", "City Street 2")
-    auth_service.register(Admin, "admin_user", "admin@example.com", "pass", 1)
-
-    print("\n", 5 * "*", "Аутентификация")
-    auth_service.login("test2", "password21")
     auth_service.login("test2", "password2")
-    auth_service.login("test3", "password3")
-    auth_service.login("admin_user", "pass")
-    auth_service.login("admin_user", "pass")
-    print(auth_service.get_logged_users())
-
-    print("\n", 5 * "*", "Выход из системы")
     auth_service.logout("test2")
-    print(auth_service.get_logged_users())
-
-    print("\n", 5 * "*", "Действия админа")
     admin = User.users.get("admin_user")
     admin.delete_user("test3")
-    print(admin.list_users())
+
